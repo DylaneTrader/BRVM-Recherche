@@ -1,0 +1,15 @@
+{
+  "brvm": {
+    "depot": "DylaneTrader/Scraper-BRVM",
+    "commit": "be980d48ea566b77662050f9f7a606daf2d81115",
+    "date_donnees": "2026-10-29",
+    "contenu": "Cours et volumes quotidiens des actions, indices, dividendes, pondérations par capitalisation, journal de conformité des collectes",
+    "chemins": [
+      "/data/actions/*_historique.csv",
+      "/data/indices/*_historique.csv",
+      "/data/dividendes/dividendes.csv",
+      "/data/Composition_flottante.xlsx",
+      "/data/sources_conformite.json"
+    ]
+  }
+}
