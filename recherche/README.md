@@ -10,6 +10,7 @@
 | [`saisonnalite_volumes/`](saisonnalite_volumes/README.md) | Saisonnalité des volumes échangés | Phase 1 : pertinence, en attente de validation |
 | [`backtest_naif/`](backtest_naif/README.md) | De combien un backtest naïf surestime-t-il une stratégie sur la BRVM ? | Phase 2 : revue de littérature, en attente de validation |
 | [`ratios_reglementaires/`](ratios_reglementaires/README.md) | Prévision probabiliste et stress des ratios réglementaires (portefeuille actions ; FCP à quatre classes d'actifs) | Phase 2 : revue de littérature, en attente de validation |
+| [`black_litterman/`](black_litterman/README.md) | Le modèle Black-Litterman sur la BRVM : a priori d'équilibre, vues et rotation, face aux parts égales | Phases 1 et 2 : pertinence et premier brouillon de revue, en attente de validation |
 | `detachement_dividende/` | Comportement des cours autour du détachement du dividende | Sujet retenu, phase 1 à venir |
 | `commun/` | Code partagé : accès aux données, règles de marché, mise en forme Word | |
 
