@@ -1,6 +1,6 @@
 # Revue de littérature : le modèle Black-Litterman sur la BRVM
 
-Date : 2026-11-01. État : premier brouillon, en attente de validation (la phase 1 n'est pas encore validée ; la revue sera reprise si la question est recadrée).
+Date : 2026-11-01. État : premier brouillon, en attente de validation. La phase 1 est validée (2026-11-01) sans changement de la question.
 
 Question de travail (voir `00_pertinence.md`) : une allocation Black-Litterman fait-elle mieux, nette des frais et exécutée de façon réaliste, que les parts égales et que la pondération par la capitalisation flottante sur les actions de la BRVM, et d'où vient l'écart : de l'a priori, des vues ou de la rotation ?
 
@@ -70,7 +70,7 @@ Conséquence pour l'étude : la rotation de l'évaluation exploratoire (6,9 fois
 
 ## 9. Méthodes recommandées
 
-- **Témoins** : parts égales (DeMiguel, Garlappi et Uppal, 2009) et pondération par la capitalisation flottante ; Markowitz sous contrainte de vente à découvert comme repère.
+- **Témoins** (retenus en phase 1) : parts égales (DeMiguel, Garlappi et Uppal, 2009) et pondération par la capitalisation flottante ; Markowitz sous contrainte de vente à découvert comme repère.
 - **Variantes figées d'avance** : a priori neutre ou d'équilibre ; vues nulles, momentum, rendement du dividende ; avec ou sans bande de non-rééquilibrage. Paramètres τ et Ω fixés par une règle publiée (Idzorek, 2007 ; Walters), pas optimisés.
 - **Validation** : réglages sur 2008-2018, confirmation sur 2019-2026 ; walk-forward (skill `walk-forward-validation`).
 - **Inférence** : test de différence des ratios de Sharpe robuste à l'autocorrélation, ou bootstrap par blocs ; ratio de Sharpe dégonflé et correction de Holm pour les variantes (références de `../backtest_naif/`).
