@@ -1,6 +1,6 @@
 # Pertinence : le modèle Black-Litterman sur la BRVM
 
-Date : 2026-11-01. Données au commit `be980d48` de `DylaneTrader/Scraper-BRVM` (`recherche/sources.json`, données au 29/10/2026).
+Date : 2026-11-01. État : validée le 2026-11-01. Données au commit `be980d48` de `DylaneTrader/Scraper-BRVM` (`recherche/sources.json`, données au 29/10/2026).
 
 ## Question proposée
 
@@ -56,8 +56,8 @@ Pour les gérants de la place (OPCVM, SGI) : savoir si un outil répandu ailleur
 2. **Les vues ne doivent pas être le sujet principal.** Tester la valeur de Prophet est une autre question ; l'étude doit comparer des vues simples et documentées (momentum, valeur par le rendement du dividende, vues nulles) pour isoler l'apport du cadre.
 3. **La liquidité limite l'univers.** Le seuil de liquidité et la participation au volume se fixent d'avance.
 
-## Questions à l'utilisateur
+## Décisions de l'utilisateur (2026-11-01)
 
-1. La question recadrée vous convient-elle, ou voulez-vous étudier d'abord la valeur des vues Prophet ?
-2. Quelles références voulez-vous comme témoins : parts égales seulement, ou aussi la capitalisation flottante (l'équivalent d'un fonds indiciel BRVMC) ?
-3. Acceptez-vous la séparation 2008-2018 pour les réglages et 2019-2026 pour la confirmation ?
+1. La question recadrée est retenue ; la valeur propre des vues Prophet n'est pas le sujet.
+2. Deux témoins : les parts égales et la pondération par la capitalisation flottante.
+3. Réglages estimés sur 2008-2018, confirmation sur 2019-2026.
