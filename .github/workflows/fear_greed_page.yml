@@ -1,0 +1,45 @@
+name: Page Fear & Greed
+
+# Recalcule l'indice Fear & Greed BRVM sur les données publiques de brvm-py et publie la page
+# sur GitHub Pages. Réglage unique : Settings > Pages > Source : « GitHub Actions ».
+
+on:
+  schedule:
+    # Du lundi au vendredi, après la mise à jour des données de brvm-py (19 h 17 UTC).
+    - cron: "47 19 * * 1-5"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "recherche/fear_greed/indice.py"
+      - "recherche/fear_greed/page/**"
+      - ".github/workflows/fear_greed_page.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas numpy "brvm-py @ git+https://github.com/DylaneTrader/brvm-py"
+      - run: python recherche/fear_greed/page/publier.py --sortie site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploiement
+        uses: actions/deploy-pages@v4
