@@ -2,6 +2,8 @@
 
 Études sur le marché de la BRVM, destinées à être publiées. Chacune vit dans son dossier, avec son code, ses résultats et son article. Le dossier a quitté `DylaneTrader/brvm-app` pour `DylaneTrader/Scraper-BRVM`, puis, le 01/11/2026, ce dépôt dédié à la recherche (`DylaneTrader/BRVM-Recherche`). Il ne lit que les données de Scraper-BRVM.
 
+Ce dépôt public ne contient que le code de calcul de chaque étude et, une fois l'article achevé, son Word et son PDF. Les textes de recherche (fiches de pertinence, revues de littérature, hypothèses, scripts qui construisent l'article) restent sur le poste de l'auteur.
+
 | Dossier | Travail | État |
 |---|---|---|
 | [`fear_greed/`](fear_greed/README.md) | Indice de sentiment Fear & Greed BRVM : construction et validation | Article rédigé (Prix de la Recherche des 30 ans de la BRVM) |

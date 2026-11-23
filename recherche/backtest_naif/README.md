@@ -4,6 +4,6 @@ Un moteur de backtest est un outil, pas un résultat. L'étude mesure l'écart e
 
 Le moteur est réécrit dans `recherche/` ; `quant/backtest.py` de Scraper-BRVM (le même que celui de BRVM app) sert de contrôle, sans être importé.
 
-État : phase 2, revue de littérature remise ([`01_revue_litterature.md`](01_revue_litterature.md)), en attente de validation. Suivi : [`JOURNAL.md`](JOURNAL.md).
+État : phase 2, revue de littérature remise (`01_revue_litterature.md`, conservé hors du dépôt), en attente de validation. Suivi : [`JOURNAL.md`](JOURNAL.md).
 
 Conventions, à suivre comme dans [`../fear_greed/`](../fear_greed/README.md) : données lues par `commun/depot.py`, règles de marché de `commun/marche.py`, article construit avec `commun/mise_en_forme.py`, chiffres écrits dans `sortie/chiffres.json`.

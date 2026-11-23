@@ -2,7 +2,7 @@
 
 Revoir le score de risque des titres et proposer des régimes de volatilité, puis les valider comme l'indice Fear & Greed.
 
-État : phase 2, revue de littérature remise ([`01_revue_litterature.md`](01_revue_litterature.md)), en attente de validation. Suivi : [`JOURNAL.md`](JOURNAL.md).
+État : phase 2, revue de littérature remise (`01_revue_litterature.md`, conservé hors du dépôt), en attente de validation. Suivi : [`JOURNAL.md`](JOURNAL.md).
 
 Conventions, à suivre comme dans [`../fear_greed/`](../fear_greed/README.md) :
 
