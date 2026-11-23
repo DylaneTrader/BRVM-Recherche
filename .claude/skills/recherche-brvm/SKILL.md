@@ -120,7 +120,9 @@ Suivre la structure de `recherche/fear_greed/` (§ 2). Ordre de travail :
 2. Relire les résultats **avant** d'écrire : un résultat surprenant se vérifie
    (données, alignement des dates, ajustement des divisions) avant d'être
    interprété.
-3. `article.py` : l'article, construit avec `commun/mise_en_forme.py`.
+3. `article.py` : l'article, construit avec `commun/mise_en_forme.py`. Ce script
+   contient le texte : il reste sur le poste de l'utilisateur et n'est jamais
+   commité (`.gitignore`). Seuls le Word et le PDF finaux sont publiés.
 4. Présenter à l'utilisateur les résultats par hypothèse (confirmée, rejetée,
    non concluante), y compris les hypothèses rejetées, puis le document.
 
@@ -146,7 +148,8 @@ recherche/<etude>/
   donnees.py                # lecture et préparation, via commun/
   etude.py                  # calculs, tableaux, figures, chiffres.json
   figures.py                # si les figures sont nombreuses
-  article.py                # document Word
+  article.py                # document Word (local, ignoré par Git)
+  <Article>.docx, .pdf      # article final, seul texte publié
   sortie/                   # CSV, PNG, chiffres.json
 ```
 
@@ -174,7 +177,7 @@ Ajouter l'étude au tableau de `recherche/README.md` dès la phase 1, avec son
   utiliser une virgule, des parenthèses, un deux-points ou une reformulation.
 - **Graphiques** : charte de `trading-visualization`.
 - **Usage de l'IA** : chaque étude publiée a sa déclaration, sur le modèle de
-  `fear_greed/declaration_ia.py`.
+  `fear_greed/Declaration_IA.docx` (le script qui la construit reste local).
 
 ---
 
