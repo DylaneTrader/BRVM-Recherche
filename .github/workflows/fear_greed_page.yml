@@ -13,6 +13,7 @@ on:
     paths:
       - "recherche/fear_greed/indice.py"
       - "recherche/fear_greed/page/**"
+      - "recherche/fear_greed/sortie/f*.png"
       - ".github/workflows/fear_greed_page.yml"
 
 permissions:
