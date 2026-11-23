@@ -142,9 +142,9 @@ avant d'agir.
 recherche/<etude>/
   README.md                 # question, état, commandes pour reproduire
   JOURNAL.md                # phases, validations, corrections
-  00_pertinence.md
-  01_revue_litterature.md
-  02_hypotheses.md
+  00_pertinence.md          # local, ignoré par Git
+  01_revue_litterature.md   # local, ignoré par Git
+  02_hypotheses.md          # local, ignoré par Git
   donnees.py                # lecture et préparation, via commun/
   etude.py                  # calculs, tableaux, figures, chiffres.json
   figures.py                # si les figures sont nombreuses
@@ -152,6 +152,12 @@ recherche/<etude>/
   <Article>.docx, .pdf      # article final, seul texte publié
   sortie/                   # CSV, PNG, chiffres.json
 ```
+
+**Publication.** Le dépôt est public. Seuls le code de calcul (`donnees.py`,
+`etude.py`, `figures.py`, `sortie/`), le README, le JOURNAL et le Word et le PDF
+finaux y sont commités. Les textes de recherche (fiches `0X_*.md`, `article.py`,
+`declaration_ia.py`, `exporter.ps1`) restent sur le poste de l'utilisateur :
+`.gitignore` les écarte. Ne jamais les forcer dans un commit.
 
 Ajouter l'étude au tableau de `recherche/README.md` dès la phase 1, avec son
 état (« Phase 1 : pertinence », …).
