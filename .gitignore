@@ -10,6 +10,11 @@ recherche/fear_greed/sortie/cache/
 recherche/.donnees/
 ~$*.docx
 
+# Texte des articles : construit en local, jamais publié (seuls le Word et le PDF finaux le sont)
+recherche/*/article.py
+recherche/*/declaration_ia.py
+recherche/*/exporter.ps1
+
 # Claude Code : réglages locaux
 .claude/settings.local.json
 

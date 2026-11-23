@@ -105,7 +105,7 @@ Aucune étude retrouvée ne mesure, sur la BRVM ou sur un autre marché africain
 | White, H. (2000). « A reality check for data snooping ». *Econometrica*, 68(5), 1097-1126. | https://doi.org/10.1111/1468-0262.00152 | Résumé | Test de la meilleure spécification |
 | Zakamulin, V. (2018). « Revisiting the profitability of market timing with moving averages ». *International Review of Finance*, 18(2), 317-327. | https://doi.org/10.1111/irfi.12132 | Résumé | Biais d'anticipation dans un backtest publié |
 
-Références communes avec la revue du régime de marché, déjà vérifiées : Brock, Lakonishok et LeBaron (1992) ; Fifield, Power et Knipe (2008) ; Tan Toe, Toe et Zoungrana (2023) ; Houndalidji, Tchindro et Hounkou (2024). Le règlement général de la BRVM (2022), articles 35 et 65, est cité avec son lien dans l'article Fear & Greed (`../fear_greed/article.py`).
+Références communes avec la revue du régime de marché, déjà vérifiées : Brock, Lakonishok et LeBaron (1992) ; Fifield, Power et Knipe (2008) ; Tan Toe, Toe et Zoungrana (2023) ; Houndalidji, Tchindro et Hounkou (2024). Le règlement général de la BRVM (2022), articles 35 et 65, est cité avec son lien dans l'article Fear & Greed (`../fear_greed/Fear_Greed_BRVM.pdf`).
 
 Détails à vérifier : pages de Kim et Rhee (885-899 ou 885-901) et de Harvey, Liu et Zhu (5-68 ou 5-72) ; année de Bailey et al. (2016 ou 2017).
 
