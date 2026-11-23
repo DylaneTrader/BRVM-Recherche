@@ -4,7 +4,8 @@ Calcule l'indice avec `indice.py` sur les données publiques de brvm-py (cours a
 valeurs échangées en FCFA, BRVM Composite, dividendes retenus, nombre de titres), puis écrit un site
 statique :
 
-    site/index.html             page lisible, sans script ni dépendance extérieure
+    site/index.html             page lisible, sans script ni dépendance extérieure (gabarit modele.html)
+    site/etude/*.png            figures de l'article, reprises de recherche/fear_greed/sortie
     site/fear_greed.json        dernière valeur, zone, composantes et historique
     site/fear_greed.csv         historique complet, séance par séance
 
@@ -18,6 +19,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -27,9 +29,14 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import indice as FG  # noqa: E402
 
-COULEURS = {"Peur extrême": "#8b1e1e", "Peur": "#d9822b", "Neutre": "#8a8f98",
-            "Cupidité": "#4f8a3a", "Cupidité extrême": "#1f5f2a"}
+# Couleurs des zones, les mêmes que les figures de l'article
+COULEURS = {"Peur extrême": "#e85d5d", "Peur": "#f28c3c", "Neutre": "#f2ad3a",
+            "Cupidité": "#7fdcb5", "Cupidité extrême": "#2fb886"}
+SIGLES = {"Peur extrême": "PE", "Peur": "P", "Neutre": "N", "Cupidité": "C", "Cupidité extrême": "CE"}
 BORNES = [(0, 25), (25, 44), (44, 55), (55, 75), (75, 100)]
+ICI = Path(__file__).resolve().parent
+SORTIE_ETUDE = ICI.parent / "sortie"
+PDF = "https://github.com/DylaneTrader/BRVM-Recherche/blob/main/recherche/fear_greed/Fear_Greed_BRVM.pdf"
 
 
 def donnees() -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, dict]:
@@ -68,49 +75,205 @@ def calculer(cours, valeurs, ix, rt) -> pd.DataFrame:
     return out.dropna(subset=["score"])
 
 
-def _svg_historique(s: pd.Series, ix: pd.Series) -> str:
-    """Score sur deux ans, zones en bandes, BRVM Composite en fond (échelle propre)."""
-    s = s.iloc[-504:]
-    ix = ix.reindex(s.index)
-    L, H, g, d, h, b = 760, 300, 44, 14, 14, 30
-    w, hh = L - g - d, H - h - b
-    x = lambda i: g + w * i / max(len(s) - 1, 1)  # noqa: E731
-    y = lambda v: h + hh * (1 - v / 100)  # noqa: E731
-    parts = [f'<svg viewBox="0 0 {L} {H}" role="img" aria-label="Historique de l\'indice sur deux ans">']
-    for (lo, hi), (zone, c) in zip(BORNES, COULEURS.items()):
-        parts.append(f'<rect x="{g}" y="{y(hi):.1f}" width="{w}" height="{y(lo) - y(hi):.1f}" fill="{c}" opacity="0.09"/>')
-    for v in (0, 25, 44, 55, 75, 100):
-        parts.append(f'<text x="{g - 6}" y="{y(v) + 4:.1f}" text-anchor="end" class="ax">{v}</text>')
-    lo_i, hi_i = ix.min(), ix.max()
-    if np.isfinite(lo_i) and hi_i > lo_i:
-        pts = " ".join(f"{x(i):.1f},{h + hh * (1 - (v - lo_i) / (hi_i - lo_i)):.1f}" for i, v in enumerate(ix) if np.isfinite(v))
-        parts.append(f'<polyline points="{pts}" fill="none" stroke="#8a8f98" stroke-width="1" opacity="0.6"/>')
-    pts = " ".join(f"{x(i):.1f},{y(v):.1f}" for i, v in enumerate(s))
-    parts.append(f'<polyline points="{pts}" fill="none" stroke="#1f4e79" stroke-width="1.8"/>')
-    for annee in sorted(set(s.index.year))[1:]:
-        i = int(np.searchsorted(s.index, pd.Timestamp(f"{annee}-01-01")))
-        parts.append(f'<line x1="{x(i):.1f}" x2="{x(i):.1f}" y1="{h}" y2="{h + hh}" stroke="#ccc" stroke-dasharray="3,3"/>')
-        parts.append(f'<text x="{x(i):.1f}" y="{H - 10}" text-anchor="middle" class="ax">{annee}</text>')
-    parts.append("</svg>")
-    return "".join(parts)
+def _fr(x, d=0, signe=False) -> str:
+    if x is None or not np.isfinite(x):
+        return "n.d."
+    s = f"{x:+,.{d}f}" if signe else f"{x:,.{d}f}"
+    return s.replace(",", " ").replace(".", ",")
+
+
+def _couleur(v: float) -> str:
+    return COULEURS[FG.libelle(v)]
+
+
+def _x(t) -> str:
+    return html.escape(str(t), quote=True)
 
 
 def _svg_jauge(v: float) -> str:
-    cx, cy, r = 160, 150, 120
-    arc = []
+    """Demi-cercle des cinq zones, aiguille sur la valeur du jour."""
+    cx, cy, r, e = 200, 190, 160, 30
+    p = [f'<svg viewBox="0 0 400 225" class="jauge" role="img" aria-label="Jauge : {v:.0f} sur 100">']
     for (lo, hi), c in zip(BORNES, COULEURS.values()):
         a0, a1 = np.pi * (1 - lo / 100), np.pi * (1 - hi / 100)
         x0, y0 = cx + r * np.cos(a0), cy - r * np.sin(a0)
         x1, y1 = cx + r * np.cos(a1), cy - r * np.sin(a1)
-        arc.append(f'<path d="M{x0:.1f},{y0:.1f} A{r},{r} 0 0 1 {x1:.1f},{y1:.1f}" stroke="{c}" stroke-width="22" fill="none"/>')
+        p.append(f'<path d="M{x0:.1f},{y0:.1f} A{r},{r} 0 0 1 {x1:.1f},{y1:.1f}" stroke="{c}" '
+                 f'stroke-width="{e}" fill="none"/>')
+    for t in (0, 25, 44, 55, 75, 100):
+        a = np.pi * (1 - t / 100)
+        p.append(f'<text x="{cx + (r + 28) * np.cos(a):.1f}" y="{cy - (r + 28) * np.sin(a) + 5:.1f}" '
+                 f'text-anchor="middle" class="graduation">{t}</text>')
     a = np.pi * (1 - v / 100)
-    nx, ny = cx + (r - 30) * np.cos(a), cy - (r - 30) * np.sin(a)
-    return (f'<svg viewBox="0 0 320 175" role="img" aria-label="Jauge : {v:.0f} sur 100">{"".join(arc)}'
-            f'<line x1="{cx}" y1="{cy}" x2="{nx:.1f}" y2="{ny:.1f}" stroke="#222" stroke-width="4" stroke-linecap="round"/>'
-            f'<circle cx="{cx}" cy="{cy}" r="7" fill="#222"/></svg>')
+    nx, ny = cx + (r - 44) * np.cos(a), cy - (r - 44) * np.sin(a)
+    p.append(f'<line x1="{cx}" y1="{cy}" x2="{nx:.1f}" y2="{ny:.1f}" class="aiguille" stroke-width="6" '
+             f'stroke-linecap="round"/><circle cx="{cx}" cy="{cy}" r="11" class="pivot"/></svg>')
+    return "".join(p)
 
 
-def page(res: pd.DataFrame, infos: dict) -> str:
+def _svg_historique(s: pd.Series, ix: pd.Series) -> str:
+    """Toute l'histoire de l'indice, zones en bandes, BRVM Composite en fond sur sa propre échelle."""
+    ix = ix.reindex(s.index)
+    L, H, g, d, h, b = 1100, 380, 40, 12, 12, 30
+    w, hh = L - g - d, H - h - b
+    x = lambda i: g + w * i / max(len(s) - 1, 1)  # noqa: E731
+    y = lambda v: h + hh * (1 - v / 100)  # noqa: E731
+    p = [f'<svg viewBox="0 0 {L} {H}" class="graphe" role="img" aria-label="Historique complet de l’indice">']
+    for (lo, hi), c in zip(BORNES, COULEURS.values()):
+        p.append(f'<rect x="{g}" y="{y(hi):.1f}" width="{w}" height="{y(lo) - y(hi):.1f}" fill="{c}" opacity=".13"/>')
+    for v in (0, 25, 44, 55, 75, 100):
+        p.append(f'<text x="{g - 6}" y="{y(v) + 4:.1f}" text-anchor="end" class="ax">{v}</text>')
+    lo_i, hi_i = float(np.nanmin(ix)), float(np.nanmax(ix))
+    pts = [f"{x(i):.1f},{h + hh * (1 - (v - lo_i) / (hi_i - lo_i)):.1f}" for i, v in enumerate(ix) if np.isfinite(v)]
+    p.append(f'<polygon points="{x(0):.1f},{h + hh} {" ".join(pts)} {x(len(s) - 1):.1f},{h + hh}" class="aire-ix"/>')
+    pts = " ".join(f"{x(i):.1f},{y(v):.1f}" for i, v in enumerate(s))
+    p.append(f'<polyline points="{pts}" fill="none" class="trait-score" stroke-width="1.4" stroke-linejoin="round"/>')
+    annees = sorted(set(s.index.year))[1:]
+    pas = 1 if len(annees) <= 8 else 2
+    for annee in annees:
+        i = int(np.searchsorted(s.index, pd.Timestamp(f"{annee}-01-01")))
+        p.append(f'<line x1="{x(i):.1f}" x2="{x(i):.1f}" y1="{h}" y2="{h + hh}" class="repere"/>')
+        if annee % pas == 0:
+            p.append(f'<text x="{x(i):.1f}" y="{H - 8}" text-anchor="middle" class="ax">{annee}</text>')
+    p.append("</svg>")
+    return "".join(p)
+
+
+def _barres(dernier: pd.Series) -> str:
+    """Piliers et composantes du jour : une barre de 0 à 100 chacune, couleur de sa zone."""
+    out = []
+    for k, (nom, comp) in FG.PILIERS.items():
+        v = dernier.get(k, np.nan)
+        lignes = "".join(
+            f'<div class="barre-ligne comp"><span>{_x(FG.NOMS[c])}</span>'
+            f'<span class="piste"><i style="width:{dernier[c]:.1f}%;background:{_couleur(dernier[c])}"></i></span>'
+            f'<b>{dernier[c]:.0f}</b></div>' for c in comp if np.isfinite(dernier[c]))
+        tete = (f'<div class="barre-ligne pilier"><span>{_x(nom)}</span>'
+                f'<span class="piste"><i style="width:{v:.1f}%;background:{_couleur(v)}"></i></span>'
+                f'<b>{v:.0f}</b></div>') if np.isfinite(v) else ""
+        out.append(f'<div class="groupe">{tete}{lignes}</div>')
+    return "".join(out)
+
+
+def _petits_multiples(res: pd.DataFrame) -> str:
+    """Chaque composante sur un an, avec ses zones."""
+    r = res.iloc[-252:]
+    L, H = 300, 90
+    out = []
+    for k, nom in FG.NOMS.items():
+        s = r[k]
+        if s.dropna().empty:
+            continue
+        bandes = "".join(f'<rect x="0" y="{H * (1 - hi / 100):.1f}" width="{L}" height="{H * (hi - lo) / 100:.1f}" '
+                         f'fill="{c}" opacity=".14"/>' for (lo, hi), c in zip(BORNES, COULEURS.values()))
+        pts = " ".join(f"{L * i / (len(s) - 1):.1f},{H * (1 - v / 100):.1f}" for i, v in enumerate(s) if np.isfinite(v))
+        der = float(s.dropna().iloc[-1])
+        out.append(f'<figure class="multiple"><figcaption><span>{_x(nom)}</span><b style="color:{_couleur(der)}">'
+                   f'{der:.0f}</b></figcaption><svg viewBox="0 0 {L} {H}" preserveAspectRatio="none" aria-hidden="true">'
+                   f'{bandes}<polyline points="{pts}" fill="none" class="trait-score" stroke-width="1.6" '
+                   f'vector-effect="non-scaling-stroke"/></svg></figure>')
+    return "".join(out)
+
+
+def _repartition(res: pd.DataFrame) -> str:
+    """Part du temps passé dans chaque zone depuis le début de l'historique."""
+    zones = res["score"].map(FG.libelle)
+    parts = zones.value_counts(normalize=True).reindex(COULEURS.keys()).fillna(0) * 100
+    barre = "".join(f'<i style="width:{v:.2f}%;background:{COULEURS[z]}" title="{_x(z)} : {_fr(v, 1)} %"></i>'
+                    for z, v in parts.items())
+    legende = "".join(f'<li><span class="pastille" style="background:{COULEURS[z]}"></span>{_x(z)}'
+                      f'<b>{_fr(v, 1)} %</b></li>' for z, v in parts.items())
+    return f'<div class="empile">{barre}</div><ul class="legende">{legende}</ul>'
+
+
+def _svg_par_zone(valeurs: dict, titre: str, unite: str = "%") -> str:
+    """Barres verticales par zone, valeurs positives ou négatives."""
+    L, H, g, h, b = 420, 230, 44, 26, 34
+    w, hh = L - g - 10, H - h - b
+    vals = [v for v in valeurs.values() if np.isfinite(v)]
+    lo, hi = min(0.0, min(vals)), max(0.0, max(vals))
+    pad = (hi - lo) * .12 or 1
+    lo, hi = lo - (pad if lo < 0 else 0), hi + pad
+    y = lambda v: h + hh * (1 - (v - lo) / (hi - lo))  # noqa: E731
+    p = [f'<svg viewBox="0 0 {L} {H}" class="graphe" role="img" aria-label="{_x(titre)}">',
+         f'<line x1="{g}" x2="{L - 10}" y1="{y(0):.1f}" y2="{y(0):.1f}" class="zero"/>']
+    n = len(valeurs)
+    pas = w / n
+    for i, (z, v) in enumerate(valeurs.items()):
+        if not np.isfinite(v):
+            continue
+        x0 = g + i * pas + pas * .18
+        y0, y1 = sorted((y(0), y(v)))
+        p.append(f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{pas * .64:.1f}" height="{max(y1 - y0, 1):.1f}" '
+                 f'rx="3" fill="{COULEURS[z]}"/>')
+        ty = y(v) - 6 if v >= 0 else y(v) + 15
+        p.append(f'<text x="{x0 + pas * .32:.1f}" y="{ty:.1f}" text-anchor="middle" class="val">{_fr(v, 1, True)} {unite}</text>')
+        p.append(f'<text x="{x0 + pas * .32:.1f}" y="{H - 10}" text-anchor="middle" class="ax">{SIGLES[z]}</text>')
+    p.append("</svg>")
+    return "".join(p)
+
+
+def _apres_zone(res: pd.DataFrame, rt: pd.Series, horizon: int = 60) -> dict:
+    """Rendement moyen de l'indice dividendes réinvestis sur les `horizon` séances suivantes, par zone."""
+    r = rt.reindex(res.index).ffill()
+    futur = (r.shift(-horizon) / r - 1) * 100
+    z = res["score"].map(FG.libelle)
+    return {k: float(futur[z == k].mean()) for k in COULEURS}
+
+
+def _ecart_plus_haut(res: pd.DataFrame) -> dict:
+    ix = res["brvmc"]
+    ecart = (ix / ix.rolling(250, min_periods=60).max() - 1) * 100
+    z = res["score"].map(FG.libelle)
+    return {k: float(ecart[z == k].mean()) for k in COULEURS}
+
+
+def _calendrier(res: pd.DataFrame, annees: int = 8) -> str:
+    """Score moyen de chaque mois, sur les dernières années."""
+    m = res["score"].groupby([res.index.year, res.index.month]).mean()
+    ans = sorted({a for a, _ in m.index})[-annees:]
+    mois = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
+    tete = "<tr><th></th>" + "".join(f"<th>{x}</th>" for x in mois) + "</tr>"
+    corps = ""
+    for a in reversed(ans):
+        corps += f"<tr><th>{a}</th>"
+        for k in range(1, 13):
+            v = m.get((a, k), np.nan)
+            corps += (f'<td style="background:{_couleur(v)}" title="{k:02d}/{a} : {v:.0f}">{v:.0f}</td>'
+                      if np.isfinite(v) else "<td></td>")
+        corps += "</tr>"
+    return f'<div class="defile"><table class="calendrier"><thead>{tete}</thead><tbody>{corps}</tbody></table></div>'
+
+
+FIGURES = [
+    ("f1_marche.png", "Le marché BRVM de 2008 à 2026",
+     "Un marché concentré et longtemps peu liquide : Sonatel pesait 55 % de la capitalisation en 2008 et en pèse "
+     "encore 21 % ; de 2008 à 2012, 77 % des couples titre-séance étaient sans échange ou à cours figé, contre 17 % "
+     "depuis 2022."),
+    ("f2_dividendes_par_mois.png", "Les dividendes détachés selon le mois, 2016-2026",
+     "84 % des dividendes sont détachés de mai à juillet, dont 47 % en mai : d'où le calcul de la tendance sur un "
+     "BRVM Composite dividendes réinvestis."),
+    ("f8_h1_validite.png", "État du marché selon la zone de l'indice",
+     "En peur extrême, l'indice est en moyenne à 13,4 % de son plus haut d'un an, contre 3,8 % en cupidité extrême. "
+     "La volatilité, elle, change peu d'une zone à l'autre."),
+    ("f9_h2_rendements_futurs.png", "Rendement moyen de l'indice après chaque zone, selon l'horizon",
+     "Les rendements qui suivent croissent avec le score : sur 60 séances, +5,6 % après la cupidité extrême, "
+     "+1,2 % en zone neutre, -0,7 % après la peur extrême."),
+    ("f10_h3_divergences.png", "Momentum de l'indice et participation des titres, 2019-2026",
+     "Le momentum de l'indice n'explique que 28 % du rendement du titre médian ; avec la participation et la force, "
+     "47 %."),
+    ("f12_score_v3.png", "La version révisée de l'indice, comparée à la version initiale",
+     "Dividendes réinvestis, trois piliers, fenêtre de trois ans et lissage sur 10 séances : 2,5 fois moins de "
+     "changements de zone et plus d'information sur les rendements futurs, au prix d'un léger retard."),
+]
+
+
+def _figures() -> str:
+    return "".join(f'<figure class="carte figure"><img src="etude/{f}" alt="{_x(t)}">'
+                   f'<figcaption><b>{_x(t)}.</b> {_x(c)}</figcaption></figure>' for f, t, c in FIGURES)
+
+
+def page(res: pd.DataFrame, infos: dict, rt: pd.Series) -> str:
     dernier = res.iloc[-1]
     v = float(dernier["score"])
     zone = FG.libelle(v)
@@ -119,59 +282,37 @@ def page(res: pd.DataFrame, infos: dict) -> str:
     def il_y_a(n):
         return float(res["score"].iloc[-1 - n]) if len(res) > n else float("nan")
 
-    lignes = ""
-    for p, (nom, comp) in FG.PILIERS.items():
-        if np.isfinite(dernier[p]):
-            lignes += (f'<tr class="pilier"><td>{html.escape(nom)}</td><td>{dernier[p]:.0f}</td>'
-                       f'<td>{html.escape(FG.libelle(dernier[p]))}</td></tr>')
-        lignes += "".join(
-            f'<tr><td class="comp">{html.escape(FG.NOMS[k])}</td><td>{dernier[k]:.0f}</td>'
-            f'<td>{html.escape(FG.libelle(dernier[k]))}</td></tr>'
-            for k in comp if np.isfinite(dernier[k]))
-    rappels = "".join(f"<li>{lbl} : <b>{il_y_a(n):.0f}</b> ({FG.libelle(il_y_a(n))})</li>"
-                      for lbl, n in (("Séance précédente", 1), ("Il y a une semaine", 5), ("Il y a un mois", 21), ("Il y a un an", 252))
-                      if np.isfinite(il_y_a(n)))
-    provisoire = "" if infos.get("derniere_seance_close", True) else " (séance provisoire)"
-    return f"""<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fear &amp; Greed BRVM</title>
-<meta name="description" content="Indice de sentiment du marché de la BRVM, de 0 (peur extrême) à 100 (cupidité extrême), mis à jour chaque séance.">
-<style>
-:root{{--fond:#fff;--texte:#1d1d1f;--doux:#5f6368;--trait:#e3e3e3}}
-@media (prefers-color-scheme:dark){{:root{{--fond:#121417;--texte:#e8e8e8;--doux:#a0a4aa;--trait:#2c3036}}}}
-body{{margin:0;background:var(--fond);color:var(--texte);font-family:"Times New Roman",Times,serif;line-height:1.5}}
-main{{max-width:820px;margin:0 auto;padding:24px 16px 48px}}
-h1{{font-size:1.9rem;margin:0 0 4px}} .sous{{color:var(--doux);margin:0 0 24px}}
-.haut{{display:flex;flex-wrap:wrap;gap:24px;align-items:center}} .haut svg{{width:300px;max-width:100%}}
-.valeur{{font-size:3.4rem;font-weight:bold;line-height:1}} .zone{{font-size:1.4rem;color:{COULEURS[zone]}}}
-ul{{padding-left:18px}} tr.pilier td{{font-weight:bold}} td.comp{{padding-left:24px}} table{{border-collapse:collapse;width:100%;margin:8px 0 24px}}
-td,th{{border-bottom:1px solid var(--trait);padding:6px 8px;text-align:left}} td:nth-child(2){{text-align:right}}
-svg .ax{{font-size:11px;fill:var(--doux)}} .hist svg{{width:100%;height:auto}}
-footer,.note{{color:var(--doux);font-size:.92rem}} a{{color:#3d7cc9}}
-</style></head><body><main>
-<h1>Fear &amp; Greed BRVM</h1>
-<p class="sous">Sentiment du marché d'actions de la BRVM au {date:%d/%m/%Y}{provisoire}, de 0 (peur extrême) à 100 (cupidité extrême).</p>
-<section class="haut">{_svg_jauge(v)}<div><div class="valeur">{v:.0f}</div><div class="zone">{zone}</div><ul>{rappels}</ul></div></section>
-<h2>Trois piliers, cinq composantes</h2>
-<p class="note">Chaque composante est le rang de sa mesure du jour parmi les 756 dernières séances (environ trois ans), de 0 à 100, non lissé. Chaque pilier est la moyenne de ses composantes. L'indice est la moyenne des trois piliers à poids égaux, lissée sur les 10 dernières séances.</p>
-<table><thead><tr><th>Composante</th><th>Rang</th><th>Lecture</th></tr></thead><tbody>{lignes}</tbody></table>
-<h2>Deux ans d'historique</h2>
-<div class="hist">{_svg_historique(res["score"], res["brvmc"])}</div>
-<p class="note">Trait bleu : l'indice. Trait gris : le BRVM Composite, sur sa propre échelle. Bandes : les cinq zones.</p>
-<h2>Méthode</h2>
-<ul>
-<li><b>Momentum</b> (pilier Tendance) : BRVM Composite dividendes réinvestis face à sa moyenne de 125 séances.</li>
-<li><b>Participation</b> (pilier Participation) : part des titres cotés au-dessus de leur moyenne de 50 séances.</li>
-<li><b>Force</b> (pilier Participation) : nouveaux plus hauts moins nouveaux plus bas sur 52 semaines, en part des titres, lissé sur 10 séances.</li>
-<li><b>Demande</b> (pilier Flux et stress) : part des valeurs échangées sur 20 séances qui l'ont été en hausse.</li>
-<li><b>Volatilité baissière</b> (pilier Flux et stress) : volatilité des baisses du BRVM Composite dividendes réinvestis sur 20 séances face à 120 séances, inversée.</li>
-</ul>
-<p class="note">Transposition à la BRVM de la méthode de CNN, sans ses composantes sur les options, les obligations à haut rendement et les valeurs refuges. Construction et validation détaillées dans l'article « Peur et cupidité sur un marché frontière peu liquide », préparé pour le Prix de la Recherche des 30 ans de la BRVM. Version affichée : version révisée de l'article (section 7), la même que la page Overview de BRVM app.</p>
-<p>Données : <a href="fear_greed.json">JSON</a> · <a href="fear_greed.csv">CSV</a> · <a href="https://github.com/DylaneTrader/BRVM-Recherche">code</a></p>
-<footer>Données de marché : <a href="https://github.com/DylaneTrader/brvm-py">brvm-py</a> (Sikafinance, brvm.org). Indicateur de recherche, sans garantie ; ce n'est pas un conseil en investissement. Dylane NDOUDY-BAMOUENIZO.</footer>
-</main></body></html>
-"""
-
+    rappels = "".join(
+        f'<li><span>{lbl}</span><b style="color:{_couleur(il_y_a(n))}">{il_y_a(n):.0f}</b>'
+        f'<small>{_x(FG.libelle(il_y_a(n)))}</small></li>'
+        for lbl, n in (("Veille", 1), ("Il y a une semaine", 5), ("Il y a un mois", 21), ("Il y a un an", 252))
+        if np.isfinite(il_y_a(n)))
+    apres = _apres_zone(res, rt)
+    ecart = _ecart_plus_haut(res)
+    remplacements = {
+        "DATE": f"{date:%d/%m/%Y}",
+        "PROVISOIRE": "" if infos.get("derniere_seance_close", True) else " (séance provisoire)",
+        "VALEUR": f"{v:.0f}",
+        "ZONE": _x(zone),
+        "COULEUR": COULEURS[zone],
+        "JAUGE": _svg_jauge(v),
+        "RAPPELS": rappels,
+        "BARRES": _barres(dernier),
+        "MULTIPLES": _petits_multiples(res),
+        "HISTORIQUE": _svg_historique(res["score"], res["brvmc"]),
+        "DEBUT": f"{res.index[0]:%Y}",
+        "NB_SEANCES": _fr(len(res)),
+        "REPARTITION": _repartition(res),
+        "APRES_ZONE": _svg_par_zone(apres, "Rendement à 60 séances après chaque zone"),
+        "ECART": _svg_par_zone(ecart, "Écart moyen au plus haut d'un an selon la zone"),
+        "CALENDRIER": _calendrier(res),
+        "FIGURES": _figures(),
+        "PDF": PDF,
+    }
+    texte = (ICI / "modele.html").read_text(encoding="utf-8")
+    for k, val in remplacements.items():
+        texte = texte.replace("{{" + k + "}}", val)
+    return texte
 
 def main(argv=None) -> None:
     a = argparse.ArgumentParser()
@@ -182,7 +323,10 @@ def main(argv=None) -> None:
     cours, valeurs, ix, rt, infos = donnees()
     res = calculer(cours, valeurs, ix, rt)
     d = res.iloc[-1]
-    (sortie / "index.html").write_text(page(res, infos), encoding="utf-8")
+    (sortie / "index.html").write_text(page(res, infos, rt), encoding="utf-8")
+    (sortie / "etude").mkdir(exist_ok=True)
+    for f, _, _ in FIGURES:
+        shutil.copy(SORTIE_ETUDE / f, sortie / "etude" / f)
     res.round(2).to_csv(sortie / "fear_greed.csv", index_label="date", date_format="%Y-%m-%d")
     (sortie / "fear_greed.json").write_text(json.dumps({
         "date": f"{res.index[-1]:%Y-%m-%d}", "seance_close": infos.get("derniere_seance_close"),

@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fear &amp; Greed BRVM</title>
+<meta name="description" content="Indice de sentiment du marché de la BRVM, de 0 (peur extrême) à 100 (cupidité extrême), mis à jour chaque séance, et les résultats de l'étude qui le fonde.">
+<style>
+:root{--fond:#f6f4ef;--carte:#fff;--texte:#1b2433;--doux:#5c6676;--trait:#e3dfd5;--encre:#0b1f3a;--accent:#1f5fa8;--or:#c9a24a;--code:#efece5;--ombre:0 1px 2px rgba(11,31,58,.06),0 8px 24px rgba(11,31,58,.06);--rayon:14px;--serif:"Times New Roman",Times,"Liberation Serif",serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--fond:#0c1118;--carte:#141b25;--texte:#e6e9ee;--doux:#9aa4b2;--trait:#263142;--accent:#6aa6e8;--code:#1b2430;--ombre:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25)}}
+:root[data-theme="dark"]{--fond:#0c1118;--carte:#141b25;--texte:#e6e9ee;--doux:#9aa4b2;--trait:#263142;--accent:#6aa6e8;--code:#1b2430}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{margin:0;background:var(--fond);color:var(--texte);font-family:var(--serif);font-size:18px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+h1,h2,h3{line-height:1.15;margin:0;letter-spacing:-.01em}
+.conteneur{width:100%;max-width:1280px;margin:0 auto;padding:0 32px}
+@media (max-width:640px){.conteneur{padding:0 16px}body{font-size:17px}}
+.barre-haut{position:sticky;top:0;z-index:10;background:rgba(11,31,58,.95);backdrop-filter:blur(8px);color:#fff}
+.barre-haut .conteneur{display:flex;align-items:center;justify-content:space-between;height:58px;gap:16px}
+.marque{color:#fff;text-decoration:none;font-size:1.2rem;font-weight:700}
+.marque span{color:var(--or)}
+.barre-haut nav{display:flex;gap:22px}
+.barre-haut nav a{color:rgba(255,255,255,.82);text-decoration:none;font-size:1rem}
+.barre-haut nav a:hover{color:#fff}
+@media (max-width:760px){.barre-haut nav a:not(:last-child){display:none}}
+.surtitre{text-transform:uppercase;letter-spacing:.12em;font-size:.78rem;color:var(--or);margin:0 0 10px}
+.hero{background:radial-gradient(1000px 480px at 15% -10%,#1d4f8f 0%,transparent 60%),linear-gradient(160deg,var(--encre) 0%,#0e2748 100%);color:#fff;padding:56px 0 64px}
+.hero-grille{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:center}
+@media (max-width:980px){.hero-grille{grid-template-columns:minmax(0,1fr)}}
+.jauge{width:100%;max-width:520px;display:block;margin:0 auto}
+.jauge .graduation{font-size:15px;fill:rgba(255,255,255,.65);font-family:var(--serif)}
+.jauge .aiguille{stroke:#fff}.jauge .pivot{fill:#fff}
+.lecture{text-align:center;margin-top:-8px}
+.lecture .valeur{font-size:5rem;font-weight:700;line-height:1}
+.lecture .zone{font-size:1.6rem;font-weight:700}
+.hero h1{font-size:clamp(2rem,4vw,3.1rem);margin-bottom:14px}
+.chapo{color:rgba(255,255,255,.85);font-size:1.15rem;margin:0 0 24px;max-width:60ch}
+.rappels{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:640px){.rappels{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.rappels li{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px}
+.rappels span{display:block;color:rgba(255,255,255,.65);font-size:.85rem}
+.rappels b{display:block;font-size:1.8rem;line-height:1.2}
+.rappels small{color:rgba(255,255,255,.75);font-size:.85rem}
+.boutons{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+.bouton{display:inline-flex;padding:10px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.35);color:#fff;text-decoration:none;font-size:1rem}
+.bouton.plein{background:var(--or);border-color:var(--or);color:var(--encre);font-weight:700}
+.bloc{padding:64px 0}
+.bloc-doux{background:var(--code)}
+.bloc h2{font-size:clamp(1.6rem,3vw,2.3rem);margin-bottom:8px}
+.intro{color:var(--doux);max-width:75ch;margin:0 0 26px}
+.carte{background:var(--carte);border:1px solid var(--trait);border-radius:var(--rayon);padding:22px 24px;box-shadow:var(--ombre);min-width:0}
+.carte h3{font-size:1.2rem;margin-bottom:12px}
+.grille-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.grille-1-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:20px}
+.grille-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+@media (max-width:980px){.grille-2,.grille-1-2,.grille-3{grid-template-columns:minmax(0,1fr)}}
+.espace{margin-top:20px}
+.note{color:var(--doux);font-size:.92rem;margin:10px 0 0}
+.groupe{padding:8px 0;border-bottom:1px solid var(--trait)}
+.groupe:last-child{border-bottom:0}
+.barre-ligne{display:grid;grid-template-columns:150px minmax(0,1fr) 40px;align-items:center;gap:12px;padding:4px 0}
+.barre-ligne b{text-align:right;font-variant-numeric:tabular-nums}
+.barre-ligne.pilier span:first-child{font-weight:700}
+.barre-ligne.comp span:first-child{padding-left:16px;color:var(--doux)}
+.piste{height:10px;background:var(--code);border-radius:5px;overflow:hidden}
+.barre-ligne.comp .piste{height:7px}
+.piste i{display:block;height:100%;border-radius:5px}
+.multiples{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.multiple{margin:0}
+.multiple figcaption{display:flex;justify-content:space-between;font-size:.95rem}
+.multiple svg{width:100%;height:70px;display:block;border-radius:6px}
+.graphe{width:100%;height:auto;display:block}
+.graphe .ax{font-size:13px;fill:var(--doux);font-family:var(--serif)}
+.graphe .val{font-size:13px;fill:var(--texte);font-weight:700;font-family:var(--serif)}
+.graphe .zero{stroke:var(--doux);stroke-width:1}
+.graphe .repere{stroke:var(--trait);stroke-dasharray:3 3}
+.trait-score{stroke:var(--encre)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .trait-score{stroke:#e6e9ee}}
+.aire-ix{fill:var(--doux);opacity:.13}
+.legende-graphe{display:flex;flex-wrap:wrap;gap:18px;color:var(--doux);font-size:.92rem;margin-top:8px}
+.legende-graphe i{display:inline-block;width:18px;height:3px;background:var(--texte);vertical-align:middle;margin-right:6px}
+.legende-graphe i.ix{height:10px;background:var(--doux);opacity:.3}
+.empile{display:flex;height:22px;border-radius:6px;overflow:hidden;margin:6px 0 14px}
+.legende{list-style:none;padding:0;margin:0}
+.legende li{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--trait)}
+.legende b{margin-left:auto;font-variant-numeric:tabular-nums}
+.pastille{width:12px;height:12px;border-radius:3px;display:inline-block}
+.defile{overflow-x:auto}
+.calendrier{border-collapse:separate;border-spacing:3px;width:100%;font-variant-numeric:tabular-nums}
+.calendrier th{font-weight:400;color:var(--doux);font-size:.85rem;padding:2px 4px}
+.calendrier td{text-align:center;font-size:.85rem;color:#1b2433;border-radius:4px;padding:5px 2px;min-width:30px}
+.resume{font-size:1.12rem;max-width:80ch}
+.resultats{counter-reset:r}
+.resultat{position:relative;padding-top:52px}
+.resultat::before{counter-increment:r;content:counter(r);position:absolute;top:20px;left:24px;width:26px;height:26px;border-radius:50%;background:var(--encre);color:#fff;display:grid;place-items:center;font-weight:700;font-size:.9rem}
+.resultat .chiffre{font-size:2.2rem;font-weight:700;color:var(--accent);line-height:1.1;margin:4px 0}
+.resultat p{margin:6px 0 0}
+.figures{columns:2;column-gap:20px;margin-top:20px}
+@media (max-width:980px){.figures{columns:1}}
+.figure{margin:0 0 20px;padding:16px;break-inside:avoid;display:block}
+.figure img{width:100%;height:auto;display:block;border-radius:8px;background:#fff}
+.figure figcaption{font-size:.95rem;color:var(--doux);margin-top:10px}
+.figure figcaption b{color:var(--texte)}
+.recos h3{font-size:1.05rem;margin-bottom:8px}
+.recos ul{margin:0;padding-left:20px}
+.recos li{margin-bottom:8px}
+.methode{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.methode li{background:var(--carte);border:1px solid var(--trait);border-left:4px solid var(--or);border-radius:10px;padding:14px 16px}
+.methode small{display:block;color:var(--doux);text-transform:uppercase;letter-spacing:.06em;font-size:.72rem}
+.pied{background:var(--encre);color:rgba(255,255,255,.75);padding:32px 0;font-size:.95rem}
+.pied a{color:var(--or)}
+.pied p{margin:4px 0}
+</style>
+</head>
+<body>
+<header class="barre-haut"><div class="conteneur">
+  <a class="marque" href="#">Fear <span>&amp;</span> Greed BRVM</a>
+  <nav><a href="#aujourdhui">Aujourd'hui</a><a href="#historique">Historique</a><a href="#methode">Méthode</a><a href="#etude">L'étude</a></nav>
+</div></header>
+
+<section class="hero"><div class="conteneur hero-grille">
+  <div>
+    {{JAUGE}}
+    <div class="lecture"><div class="valeur">{{VALEUR}}</div><div class="zone" style="color:{{COULEUR}}">{{ZONE}}</div></div>
+  </div>
+  <div>
+    <p class="surtitre">Indice de sentiment · séance du {{DATE}}{{PROVISOIRE}}</p>
+    <h1>L'humeur du marché de la BRVM, de 0 à 100.</h1>
+    <p class="chapo">De la peur extrême (0) à la cupidité extrême (100), l'indice résume chaque séance la tendance du marché, la participation des titres, les flux et le stress, à partir des seules données publiques de la place. Il est recalculé chaque jour de séance.</p>
+    <ul class="rappels">{{RAPPELS}}</ul>
+    <div class="boutons"><a class="bouton plein" href="#etude">Les résultats de l'étude</a><a class="bouton" href="{{PDF}}">Lire l'article (PDF)</a></div>
+  </div>
+</div></section>
+
+<main>
+<section id="aujourdhui" class="bloc"><div class="conteneur">
+  <p class="surtitre">Aujourd'hui</p>
+  <h2>Trois piliers, cinq composantes</h2>
+  <p class="intro">Chaque composante est le rang de sa mesure du jour parmi les 756 dernières séances (environ trois ans), de 0 à 100. Chaque pilier est la moyenne de ses composantes ; l'indice est la moyenne des trois piliers, lissée sur 10 séances.</p>
+  <div class="grille-1-2">
+    <article class="carte"><h3>Le détail du jour</h3>{{BARRES}}</article>
+    <article class="carte"><h3>Les composantes sur un an</h3><div class="multiples">{{MULTIPLES}}</div>
+      <p class="note">Rang de chaque composante sur les 252 dernières séances, sur le fond des cinq zones. Les composantes ne sont pas lissées : elles réagissent avant l'indice.</p></article>
+  </div>
+</div></section>
+
+<section id="historique" class="bloc bloc-doux"><div class="conteneur">
+  <p class="surtitre">Historique</p>
+  <h2>Depuis {{DEBUT}}, {{NB_SEANCES}} séances</h2>
+  <article class="carte">{{HISTORIQUE}}
+    <div class="legende-graphe"><span><i></i>Fear &amp; Greed BRVM</span><span><i class="ix"></i>BRVM Composite (sa propre échelle)</span><span>Bandes : les cinq zones</span></div>
+  </article>
+  <div class="grille-1-2 espace">
+    <article class="carte"><h3>Le temps passé dans chaque zone</h3>{{REPARTITION}}</article>
+    <article class="carte"><h3>Score moyen de chaque mois</h3>{{CALENDRIER}}<p class="note">Couleur de la zone du score moyen du mois.</p></article>
+  </div>
+  <div class="grille-2 espace">
+    <article class="carte"><h3>Le marché suit-il après chaque zone ?</h3>{{APRES_ZONE}}
+      <p class="note">Rendement moyen du BRVM Composite dividendes réinvestis sur les 60 séances qui suivent une séance de chaque zone (PE peur extrême, P peur, N neutre, C cupidité, CE cupidité extrême). Recalculé chaque séance sur toute l'histoire de la version révisée.</p></article>
+    <article class="carte"><h3>À quelle distance du plus haut ?</h3>{{ECART}}
+      <p class="note">Écart moyen du BRVM Composite à son plus haut des 250 dernières séances, selon la zone du jour. La peur, sur la BRVM, c'est d'abord un marché qui s'éloigne de son sommet.</p></article>
+  </div>
+</div></section>
+
+<section id="methode" class="bloc"><div class="conteneur">
+  <p class="surtitre">Méthode</p>
+  <h2>Ce que mesure chaque composante</h2>
+  <p class="intro">Transposition à la BRVM de la méthode de CNN, sans ses composantes sur les options, les obligations à haut rendement et les valeurs refuges, qui n'existent pas sur ce marché.</p>
+  <ul class="methode">
+    <li><small>Tendance</small><b>Momentum.</b> BRVM Composite dividendes réinvestis face à sa moyenne de 125 séances.</li>
+    <li><small>Participation</small><b>Participation.</b> Part des titres cotés au-dessus de leur moyenne de 50 séances.</li>
+    <li><small>Participation</small><b>Force.</b> Nouveaux plus hauts moins nouveaux plus bas sur 52 semaines, en part des titres, lissé sur 10 séances.</li>
+    <li><small>Flux et stress</small><b>Demande.</b> Part des valeurs échangées sur 20 séances qui l'ont été en hausse.</li>
+    <li><small>Flux et stress</small><b>Volatilité baissière.</b> Volatilité des baisses du BRVM Composite dividendes réinvestis sur 20 séances face à 120 séances, inversée.</li>
+  </ul>
+  <p class="note">Zones : peur extrême de 0 à 24, peur de 25 à 43, neutre de 44 à 54, cupidité de 55 à 74, cupidité extrême de 75 à 100. Version affichée : la version révisée de l'article (section 7), la même que la page Overview de BRVM app. Données : <a href="fear_greed.json">JSON</a> · <a href="fear_greed.csv">CSV</a> · <a href="https://github.com/DylaneTrader/BRVM-Recherche">code</a>.</p>
+</div></section>
+
+<section id="etude" class="bloc bloc-doux"><div class="conteneur">
+  <p class="surtitre">L'étude</p>
+  <h2>Peur et cupidité sur un marché frontière peu liquide</h2>
+  <p class="intro">Construction et validation d'un indice de sentiment pour la Bourse Régionale des Valeurs Mobilières. Rapport de recherche préparé pour le Prix de la Recherche du 30<sup>e</sup> anniversaire de la BRVM, octobre 2026, données arrêtées au 07/10/2026.</p>
+  <p class="resume">L'étude construit l'indice à partir des seules données publiques de marché (cours, volumes, indices et dividendes de 48 sociétés, sur 4 788 séances, du 02/01/2008 au 07/10/2026) et le confronte à cinq hypothèses. Trois résultats ressortent.</p>
+
+  <div class="grille-3 resultats">
+    <article class="carte resultat"><h3>La peur se lit dans la liquidité, pas dans la volatilité</h3>
+      <p class="chiffre">-13,4 % <small style="font-size:1rem;color:var(--doux)">contre -3,8 %</small></p>
+      <p>En peur extrême, l'indice est en moyenne à 13,4 % de son plus haut d'un an, contre 3,8 % en cupidité extrême. Le score baisse quand les séances sans échange se multiplient. Une fois retirée la composante qui la contient, le lien avec la volatilité disparaît.</p></article>
+    <article class="carte resultat"><h3>Le sentiment annonce la poursuite, pas le retournement</h3>
+      <p class="chiffre">+4,5 points</p>
+      <p>Sur 60 séances, les phases de cupidité extrême sont suivies de rendements supérieurs de 4,5 points à ceux des phases neutres ; la peur extrême n'annonce pas de rebond. Au-delà d'un mois, cette information se confond avec l'inertie propre de l'indice.</p></article>
+    <article class="carte resultat"><h3>Sur un marché concentré, la participation compte</h3>
+      <p class="chiffre">28 % → 47 %</p>
+      <p>Le momentum de l'indice n'explique que 28 % des variations du rendement du titre médian sur 20 séances ; la participation et la force portent cette part à 47 %. Quand quelques capitalisations font l'indice, regarder la majorité des titres change la lecture.</p></article>
+  </div>
+  <p class="note">Deux autres hypothèses : la saison des dividendes (mai à juillet) ne biaise pas le score (écart de 3,1 points, non significatif), et une pondération statistique ne fait pas mieux que des poids égaux. La version révisée (dividendes réinvestis, trois piliers, fenêtre de trois ans, lissage) divise par 2,5 les changements de zone.</p>
+
+  <div class="figures">{{FIGURES}}</div>
+
+  <h2 class="espace" style="margin-top:48px">Recommandations</h2>
+  <div class="grille-3 recos espace">
+    <article class="carte"><h3>Pour la BRVM</h3><ul>
+      <li>Publier un indicateur quotidien de sentiment, avec sa méthode, ses composantes et son historique.</li>
+      <li>Publier avec le bulletin de la cote des statistiques de largeur et de liquidité : titres en hausse, titres au-dessus de leur moyenne de 50 séances, nouveaux plus hauts et plus bas, séances sans échange.</li>
+      <li>Publier un BRVM Composite dividendes réinvestis : avec un rendement en dividendes de l'ordre de 7 % par an, l'indice de cours sous-estime la performance réelle du marché.</li>
+    </ul></article>
+    <article class="carte"><h3>Pour le régulateur et les SGI</h3><ul>
+      <li>Suivre les phases de peur comme des phases de liquidité dégradée : c'est le moment où les contrats de liquidité sont les plus utiles.</li>
+      <li>Surveiller les divergences entre l'indice et la participation : un indice porté par quelques capitalisations pendant que la majorité des titres recule appelle une communication prudente.</li>
+    </ul></article>
+    <article class="carte"><h3>Pour les investisseurs</h3><ul>
+      <li>Lire l'indice comme une description, pas comme un signal : sur la BRVM, la peur extrême accompagne des marchés qui continuent souvent de baisser.</li>
+      <li>Regarder les composantes, en particulier la participation : un score bas avec un momentum élevé décrit un marché étroit, pas une panique générale.</li>
+    </ul></article>
+  </div>
+
+  <article class="carte espace"><h3>Limites</h3>
+    <p style="margin:0">Les valeurs échangées avant 2013 paraissent incomplètes ; les dividendes de la base ne commencent qu'en 2016 ; dix-sept ans d'historique ne contiennent qu'un petit nombre de cycles complets. Trois dimensions du sentiment restent hors de portée faute de données publiques : la demande relative face aux obligations, les flux des fonds et des non-résidents, et la tonalité de la presse financière.</p>
+    <div class="boutons"><a class="bouton plein" href="{{PDF}}">Lire l'article complet (PDF)</a></div>
+  </article>
+</div></section>
+</main>
+
+<footer class="pied"><div class="conteneur">
+  <p><b>Fear &amp; Greed BRVM</b> · Dylane Emmanuel Reyane NDOUDY-BAMOUENIZO, analyste quantitatif, CGF GESTION, Abidjan · <a href="https://github.com/DylaneTrader/BRVM-Recherche">code</a> · <a href="https://github.com/DylaneTrader/brvm-py">données (brvm-py)</a></p>
+  <p>Données de marché issues de sources publiques (brvm.org, Sikafinance), fournies sans garantie. Indicateur de recherche : ce n'est pas un conseil en investissement.</p>
+</div></footer>
+</body>
+</html>
